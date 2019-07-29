@@ -5,15 +5,26 @@ def cleanup_words(file_and_contents):
 	split_contents = set()
 	try:
 		#NOTE: THIS IS NOT WORKING AT ALL!
-	 	#break file and contents into tuple of file paths and memory address housing contents!
+	 	#break file and contents into tuple of file paths and contents
 		filename,contents = file_and_contents
-		print(filename)
-		print(contents)
-		#split_contents = set(re.split("\W+", body.lower()))
+
+		#TODO: find a better way to do this?
+		split_contents = set(re.split("\W+", body.lower()))
+
+		return(split_contents,filename)
 	except:
 		print("Cleanup Error - problem encountered while attempting to clean file contents")
-	#return(split_contents,filename)
-	return(split_contents,"blah")
+
+		return
+
+#here we are setting ourselves for eventually reducing by key
+def map_filename_to_word(word_file):
+	words,filename = word_file
+
+	#extract numeric filename from absolute filepath and cast to int
+	filename_int = int(filename.rsplit('/', 1).pop())
+
+	print(str(filename_int))
 
 def process(input_file):
         #spark context setup
@@ -23,16 +34,14 @@ def process(input_file):
 	#values are the file contents
 	file_rdd = spark_context.wholeTextFiles(input_file)
 
-	print("FILE RDD CREATED")
-
-	files = file_rdd.collectAsMap()
-	for file,contents in files.items():
-		print(file)
-		print(contents[:5])
-	#NOTE: Gets to here then breaks down for some reason!
-
 	#perform basic cleanup file contents (remove punctuation & make lower case)
-	#cleanup_words(files)
+	words_rdd = file_rdd.map(cleanup_words).take(5)
+
+	#TODO: figure out the error trapping logic here...
+	if words_rdd:
+		mapped_words_rdd = words_rdd.map(map_filename_to_word)
+
+	#NOTE: HOW DO I FIGURE OUT IF ITS BEING SEPERATED OR NOT!?
 
 def main(input_file, output_file):
 	process(input_file)
