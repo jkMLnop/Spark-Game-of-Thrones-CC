@@ -9,7 +9,7 @@ def cleanup_words(file_and_contents):
 		filename,contents = file_and_contents
 
 		#TODO: find a better way to do this?
-		split_contents = set(re.split("\W+", body.lower()))
+		split_contents = set(re.split("\W+", contents.lower()))
 
 		return(split_contents,filename)
 	except:
@@ -35,11 +35,12 @@ def process(input_file):
 	file_rdd = spark_context.wholeTextFiles(input_file)
 
 	#perform basic cleanup file contents (remove punctuation & make lower case)
-	words_rdd = file_rdd.map(cleanup_words).take(5)
+	words_rdd = file_rdd.map(cleanup_words)
+	words_rdd.take(10)
 
 	#TODO: figure out the error trapping logic here...
-	if words_rdd:
-		mapped_words_rdd = words_rdd.map(map_filename_to_word)
+	#if words_rdd:
+	#	mapped_words_rdd = words_rdd.map(map_filename_to_word)
 
 	#NOTE: HOW DO I FIGURE OUT IF ITS BEING SEPERATED OR NOT!?
 
