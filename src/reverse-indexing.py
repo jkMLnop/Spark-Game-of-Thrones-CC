@@ -24,7 +24,7 @@ def map_filename_to_word(word_file):
 	#extract numeric filename from absolute filepath and cast to int
 	filename_int = int(filename.rsplit('/', 1).pop())
 
-	print(str(filename_int))
+	return(filename_int,words)
 
 def process(input_file):
         #spark context setup
@@ -36,11 +36,16 @@ def process(input_file):
 
 	#perform basic cleanup file contents (remove punctuation & make lower case)
 	words_rdd = file_rdd.map(cleanup_words)
-	words_rdd.take(10)
+	#print(words_rdd.take(1))
 
-	#TODO: figure out the error trapping logic here...
-	#if words_rdd:
-	#	mapped_words_rdd = words_rdd.map(map_filename_to_word)
+	#map words to their corresponding filenames
+	mapped_words_rdd = words_rdd.map(map_filename_to_word)
+	#print(mapped_words_rdd.take(1))
+
+	
+
+
+		
 
 	#NOTE: HOW DO I FIGURE OUT IF ITS BEING SEPERATED OR NOT!?
 
