@@ -1,14 +1,18 @@
 from pyspark import SparkContext, SparkConf
 import re
 
+#higher order function to parse out individual words in a file's contents and 
+#make lowercase then load into a set
 def cleanup_words(file_and_contents):
+	#TODO-ASK PETER: figure out how to use '.distinct()' - may require use of a tuple..
 	split_contents = set()
 	try:
-		#NOTE: THIS IS NOT WORKING AT ALL!
 	 	#break file and contents into tuple of file paths and contents
 		filename,contents = file_and_contents
 
-		#TODO: find a better way to do this?
+		#splits contents on non-words, result is a set of all unique words
+		#NOTE: elements in a set are atomic - so we eliminate duplicates
+		#NOTE: alternative would be using .distinct() but that might be slower
 		split_contents = set(re.split("\W+", contents.lower()))
 
 		return(split_contents,filename)
@@ -17,14 +21,29 @@ def cleanup_words(file_and_contents):
 
 		return
 
-#here we are setting ourselves for eventually reducing by key
+#higher order function setting up for eventually reducing by key
 def map_filename_to_word(word_file):
 	words,filename = word_file
 
-	#extract numeric filename from absolute filepath and cast to int
-	filename_int = int(filename.rsplit('/', 1).pop())
+	try:
+		#extract numeric filename from absolute filepath and cast to int
+		filename_int = int(filename.rsplit('/', 1).pop())
 
-	return(filename_int,words)
+		#TODO THIS IS BAD AND NEEDS TO BE CHANGED!! TUPLES ARE IMMUTABLE
+		mapped_word_files = ()
+
+		for word in words:
+			#exclude empty strings from further processing
+			if word == "":
+				continue
+			#TODO USING A LIST ALREADY SO DO IT BETTER!
+			#TODO SQUARE BRACKET IN SPECS?
+			mapped_word_files += ((word,[filename_int]),)
+
+			return(mapped_word_files)
+
+	except TypeError:
+		print("File Naming Error: input file name non-numeric")
 
 def process(input_file):
         #spark context setup
@@ -38,16 +57,19 @@ def process(input_file):
 	words_rdd = file_rdd.map(cleanup_words)
 	#print(words_rdd.take(1))
 
-	#map words to their corresponding filenames
+	#map word sets for each file to their corresponding filenames
 	mapped_words_rdd = words_rdd.map(map_filename_to_word)
-	#print(mapped_words_rdd.take(1))
-
+	print(mapped_words_rdd.take(10))
+	#NOTE WORKS UNTIL HERE!
 	
-
-
-		
-
-	#NOTE: HOW DO I FIGURE OUT IF ITS BEING SEPERATED OR NOT!?
+	#flatmap individual words to filenames - each word to its filename
+	#setting up for reduceByKey, words are the keys, filenames are the values
+	flatmapped_words_rdd = mapped_words_rdd.flatMap(lambda a : a)
+	print(flatmapped_words_rdd.take(1))
+	#NOTE - ^^MIGHT ACTUALLY BE WORKING!
+			
+	#all_files_per_word_rdd = flatmapped_words_rdd.reduceByKey(lambda b, c : b + c)	
+	#print(all_files_per_word_rdd.take(1))
 
 def main(input_file, output_file):
 	process(input_file)
