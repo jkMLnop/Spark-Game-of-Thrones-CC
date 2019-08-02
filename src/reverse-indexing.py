@@ -37,8 +37,7 @@ def map_filename_to_word(word_file):
 			if word == "":
 				continue
 			#TODO USING A LIST ALREADY SO DO IT BETTER!
-			#TODO SQUARE BRACKET IN SPECS?
-			mapped_word_files += ((word,[filename_int]),)
+			mapped_word_files += (word,filename_int)
 
 			return(mapped_word_files)
 
@@ -51,7 +50,7 @@ def process(input_file):
 
 	#initialize PairRDD (of key-value pairs) where keys are filepaths &
 	#values are the file contents
-	file_rdd = spark_context.wholeTextFiles(input_file)
+	file_rdd = spark_context.wholeTextFiles(input_file)	#wholeTextFiles returns an array of arrays but keeps the name of the file which we need here
 
 	#perform basic cleanup file contents (remove punctuation & make lower case)
 	words_rdd = file_rdd.map(cleanup_words)
@@ -62,11 +61,15 @@ def process(input_file):
 	print(mapped_words_rdd.take(10))
 	#NOTE WORKS UNTIL HERE!
 	
+	
+	files_grouped_by_word = mapped_words_rdd.groupByKey().map(lambda a : (a[0], sorted(list(a[1]))))
+	print(files_grouped_by_word.take(10))	
+
+	
 	#flatmap individual words to filenames - each word to its filename
 	#setting up for reduceByKey, words are the keys, filenames are the values
-	flatmapped_words_rdd = mapped_words_rdd.flatMap(lambda a : a)
-	print(flatmapped_words_rdd.take(1))
-	#NOTE - ^^MIGHT ACTUALLY BE WORKING!
+	#flatmapped_words_rdd = mapped_words_rdd.flatMap(lambda a : a)
+	#print(flatmapped_words_rdd.take(10))
 			
 	#all_files_per_word_rdd = flatmapped_words_rdd.reduceByKey(lambda b, c : b + c)	
 	#print(all_files_per_word_rdd.take(1))
